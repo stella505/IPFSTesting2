@@ -114,7 +114,7 @@ public class IPFSFunc {
             Runtime run = Runtime.getRuntime();
             try {
                 ProcessBuilder pb = new ProcessBuilder(cmd);
-                
+                //
 //                pb.directory();
 //                pb.redirectOutput(oldFilePath);
                 pb.redirectOutput(Redirect.INHERIT);
