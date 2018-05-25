@@ -8,27 +8,42 @@ package ipfstest;
 
 import java.awt.Toolkit;
 import java.awt.datatransfer.Clipboard;
+import java.awt.datatransfer.DataFlavor;
 import java.awt.datatransfer.StringSelection;
+import java.awt.datatransfer.Transferable;
 import java.io.BufferedReader;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.PrintStream;
+import java.nio.charset.StandardCharsets;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import javax.swing.JOptionPane;
+import javax.swing.KeyStroke;
 
 /**
  *
  * @author miaoshiwu
  */
 public class FileTransfer extends javax.swing.JFrame {
-
+final Clipboard clipBoard = Toolkit.getDefaultToolkit().getSystemClipboard();
     /**
      * Creates new form FileTransfer
      */
     public FileTransfer() {
         initComponents();
+        HashForFileField.add(jPopupMenu1);
+        HashForFileField.setComponentPopupMenu(jPopupMenu1);
+        copy.setText("Copy");
+        copy.setAccelerator(KeyStroke.getKeyStroke('C', Toolkit.getDefaultToolkit ().getMenuShortcutKeyMask()));
+        paste.setText("Paste");
+        paste.setAccelerator(KeyStroke.getKeyStroke('V', Toolkit.getDefaultToolkit ().getMenuShortcutKeyMask()));
+        this.setLocationRelativeTo(null);
+        setDefaultCloseOperation(this.DISPOSE_ON_CLOSE);
     }
 
     /**
@@ -41,6 +56,9 @@ public class FileTransfer extends javax.swing.JFrame {
     private void initComponents() {
 
         jMenu1 = new javax.swing.JMenu();
+        jPopupMenu1 = new javax.swing.JPopupMenu();
+        copy = new javax.swing.JMenuItem();
+        paste = new javax.swing.JMenuItem();
         jPanel1 = new javax.swing.JPanel();
         jLabel3 = new javax.swing.JLabel();
         jButton1 = new javax.swing.JButton();
@@ -54,6 +72,22 @@ public class FileTransfer extends javax.swing.JFrame {
         jButton3 = new javax.swing.JButton();
 
         jMenu1.setText("jMenu1");
+
+        copy.setText("Copy");
+        copy.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                copyActionPerformed(evt);
+            }
+        });
+        jPopupMenu1.add(copy);
+
+        paste.setText("Paste");
+        paste.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                pasteActionPerformed(evt);
+            }
+        });
+        jPopupMenu1.add(paste);
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
 
@@ -84,7 +118,7 @@ public class FileTransfer extends javax.swing.JFrame {
             }
         });
 
-        newFileNamefield.setText("filename");
+        newFileNamefield.setText("filePath");
         newFileNamefield.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 newFileNamefieldActionPerformed(evt);
@@ -138,15 +172,14 @@ public class FileTransfer extends javax.swing.JFrame {
                 .addGap(21, 21, 21))
             .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel1Layout.createSequentialGroup()
                 .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel1Layout.createSequentialGroup()
-                        .addComponent(jButton2)
-                        .addGap(119, 119, 119)
-                        .addComponent(jButton3)
-                        .addContainerGap())
-                    .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel1Layout.createSequentialGroup()
-                        .addComponent(jButton1)
-                        .addGap(199, 199, 199))))
+                .addComponent(jButton2)
+                .addGap(119, 119, 119)
+                .addComponent(jButton3)
+                .addContainerGap())
+            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel1Layout.createSequentialGroup()
+                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                .addComponent(jButton1)
+                .addGap(199, 199, 199))
         );
         jPanel1Layout.setVerticalGroup(
             jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -205,16 +238,33 @@ public class FileTransfer extends javax.swing.JFrame {
             id = Readkey(path);
         } catch (IOException ex) {
             Logger.getLogger(FileTransfer.class.getName()).log(Level.SEVERE, null, ex);
-        }
-        String filePath = jFileChooser1.getName();
+        } 
+        String filePath = jFileChooser1.getSelectedFile().getAbsolutePath();
         IPFSFunc newIpfs = new IPFSFunc();// TODO add your handling code here:
         try {
             newIpfs.IPFSAddFile(id,filePath);
+            
         }catch (Exception ex) {
             Logger.getLogger(FileTransfer.class.getName()).log(Level.SEVERE, null, ex);
         }
 // TODO add your handling code here:
     }//GEN-LAST:event_jButton1ActionPerformed
+    private void printConsole() {
+        // Create a stream to hold the output
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        PrintStream ps = new PrintStream(baos);
+        // IMPORTANT: Save the old System.out!
+        PrintStream old = System.out;
+        // Tell Java to use your special stream
+        System.setOut(ps);
+        // Print some output: goes to your special stream
+        System.out.println("Foofoofoo!");
+        // Put things back
+        System.out.flush();
+        System.setOut(old);
+        // Show what happened
+        System.out.println("Here: " + baos.toString());
+    }
     private String Readkey (String path) throws FileNotFoundException, IOException{
         String pathname = path;
             File filename = new File(pathname); 
@@ -225,15 +275,18 @@ public class FileTransfer extends javax.swing.JFrame {
             String line = "";
             line = br.readLine(); 
             while (line != null) {
-                lineAll = lineAll+"\n"+line; // 一次读入一行数据  
+                lineAll = line; // 一次读入一行数据  
                 line = br.readLine();
             }  
+            String[] lines = lineAll.split("");
+            lineAll = lines[0]+lines[lines.length-1]+lines[lines.length-2]+lines[lines.length-4];
         return lineAll;
     }
     private void HashForFileFieldActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_HashForFileFieldActionPerformed
-        StringSelection stringSelection = new StringSelection (HashForFileField.getText());
-Clipboard clpbrd = Toolkit.getDefaultToolkit ().getSystemClipboard ();
-clpbrd.setContents (stringSelection, null);// TODO add your handling code here:
+//        StringSelection stringSelection = new StringSelection (HashForFileField.getText());
+//Clipboard clpbrd = Toolkit.getDefaultToolkit ().getSystemClipboard ();
+//clpbrd.setContents (stringSelection, null);// TODO add your handling code here:
+
     }//GEN-LAST:event_HashForFileFieldActionPerformed
 
     private void newFileNamefieldActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_newFileNamefieldActionPerformed
@@ -243,20 +296,34 @@ clpbrd.setContents (stringSelection, null);// TODO add your handling code here:
     private void jButton2ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton2ActionPerformed
         String path = "/Users/miaoshiwu/.ipfs/swarm.key";
         String id = "";
+        String newPath = null;
+        Exception e = null;
+        Error er = null;
         try {
             id = Readkey(path);
         } catch (IOException ex) {
+            e = ex;
+            System.out.println(e);
             Logger.getLogger(FileTransfer.class.getName()).log(Level.SEVERE, null, ex);
+        } catch (Error ex) {
+            er = ex;
         }
         String hashcode = HashForFileField.getText();
         System.out.print(hashcode);
         String name = newFileNamefield.getText();
         IPFSFunc newIpfs = new IPFSFunc();// TODO add your handling code here:
         try {
-            newIpfs.IPFSCatFile(id,hashcode,name);
+            newPath = newIpfs.IPFSgetFile(id,hashcode,name);
         }catch (Exception ex) {
+            e = ex;
+            System.out.println(e);
             Logger.getLogger(FileTransfer.class.getName()).log(Level.SEVERE, null, ex);
-        }        
+        }catch (Error ex) {
+            er = ex;
+        }
+        if (e==null && er==null) {
+            JOptionPane.showMessageDialog(null,"Your decrypted file is saved under "+ newPath + ".");
+        }
 // TODO add your handling code here:
     }//GEN-LAST:event_jButton2ActionPerformed
 
@@ -265,18 +332,68 @@ clpbrd.setContents (stringSelection, null);// TODO add your handling code here:
     }//GEN-LAST:event_jFileChooser1ActionPerformed
 
     private void jButton3ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton3ActionPerformed
-        // TODO add your handling code here:
+        Home home = new Home();
+        home.setVisible(true);// TODO add your handling code here:
     }//GEN-LAST:event_jButton3ActionPerformed
 
-    /**
-     * @param args the command line arguments
-     */
+    private void copyActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_copyActionPerformed
+        String inputField = HashForFileField.getSelectedText();
+        StringSelection data = new StringSelection(inputField);
+        clipBoard.setContents(data,data);// TODO add your handling code here:
+    }//GEN-LAST:event_copyActionPerformed
+
+    private void pasteActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_pasteActionPerformed
+        Transferable data = clipBoard.getContents(clipBoard);
+        try {
+          if (data.isDataFlavorSupported(DataFlavor.stringFlavor)) {
+              String s = (String) (data.getTransferData(DataFlavor.stringFlavor));
+              HashForFileField.replaceSelection(s);
+          }
+        } catch (Exception e) {
+            System.out.println(e);
+        }
+    }//GEN-LAST:event_pasteActionPerformed
+
+
+
+    private void HashForFileFieldMouseReleased(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_HashForFileFieldMouseReleased
+        // TODO add your handling code here:
+    }//GEN-LAST:event_HashForFileFieldMouseReleased
+
+    private void HashForFileFieldMousePressed(java.awt.event.MouseEvent evt) {                                              
+        // TODO add your handling code here:
+    }
+    private void jPanel1MouseReleased(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_jPanel1MouseReleased
+        // TODO add your handling code here:
+        if (evt.isPopupTrigger()) {
+            jPopupMenu1.show(this,evt.getX(),evt.getY());
+        }
+    }//GEN-LAST:event_jPanel1MouseReleased
     public static void main(String args[]) {
         /* Set the Nimbus look and feel */
         //<editor-fold defaultstate="collapsed" desc=" Look and feel setting code (optional) ">
         /* If Nimbus (introduced in Java SE 6) is not available, stay with the default look and feel.
          * For details see http://download.oracle.com/javase/tutorial/uiswing/lookandfeel/plaf.html 
          */
+        try {
+            for (javax.swing.UIManager.LookAndFeelInfo info : javax.swing.UIManager.getInstalledLookAndFeels()) {
+                if ("Nimbus".equals(info.getName())) {
+                    javax.swing.UIManager.setLookAndFeel(info.getClassName());
+                    break;
+                }
+            }
+        } catch (ClassNotFoundException ex) {
+            java.util.logging.Logger.getLogger(FileTransfer.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
+        } catch (InstantiationException ex) {
+            java.util.logging.Logger.getLogger(FileTransfer.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
+        } catch (IllegalAccessException ex) {
+            java.util.logging.Logger.getLogger(FileTransfer.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
+        } catch (javax.swing.UnsupportedLookAndFeelException ex) {
+            java.util.logging.Logger.getLogger(FileTransfer.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
+        }
+        //</editor-fold>
+
+        /* Create and display the form */
         try {
             for (javax.swing.UIManager.LookAndFeelInfo info : javax.swing.UIManager.getInstalledLookAndFeels()) {
                 if ("Nimbus".equals(info.getName())) {
@@ -305,6 +422,7 @@ clpbrd.setContents (stringSelection, null);// TODO add your handling code here:
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JTextField HashForFileField;
+    private javax.swing.JMenuItem copy;
     private javax.swing.JButton jButton1;
     private javax.swing.JButton jButton2;
     private javax.swing.JButton jButton3;
@@ -315,6 +433,8 @@ clpbrd.setContents (stringSelection, null);// TODO add your handling code here:
     private javax.swing.JMenu jMenu1;
     private javax.swing.JPanel jPanel1;
     private javax.swing.JPanel jPanel2;
+    private javax.swing.JPopupMenu jPopupMenu1;
     private javax.swing.JTextField newFileNamefield;
+    private javax.swing.JMenuItem paste;
     // End of variables declaration//GEN-END:variables
 }
